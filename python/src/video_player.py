@@ -26,7 +26,7 @@ class VideoPlayer:
         vid_list.sort(key=lambda x: x.title)
 
         for vid in vid_list:
-            tags = ' '.join([str(elem) for elem in vid.tags]).replace("(", "").replace(")", "").replace("'", "")
+            tags = vid.format_tags()
             if vid.flag:
                 print(f"    {vid.title} ({vid.video_id}) [{tags}] - FLAGGED (reason: {vid.flag_reason})")
             else:
@@ -99,7 +99,7 @@ class VideoPlayer:
         """Displays video currently playing."""
         vid = self._vid_playing
         if vid:
-            tags = ' '.join([str(elem) for elem in vid.tags]).replace("(", "").replace(")", "").replace("'", "")
+            tags = vid.format_tags()
             if self._paused:
                 print(f"Currently playing: {vid.title} ({vid.video_id}) [{tags}] - PAUSED")
             else:
@@ -162,7 +162,7 @@ class VideoPlayer:
             video_list = self._playlists[playlist_name.upper()].videos
             if video_list:
                 for vid in video_list:
-                    tags = ' '.join([str(elem) for elem in vid.tags]).replace("(", "").replace(")", "").replace("'", "")
+                    tags = vid.format_tags()
                     if vid.flag:
                         print(f"    {vid.title} ({vid.video_id}) [{tags}] - FLAGGED (reason: {vid.flag_reason})")
                     else:
@@ -233,7 +233,7 @@ class VideoPlayer:
             print(f"Here are the results for {search_term}:")
             for i in range(len(results)):
                 v = results[i]
-                tags = ' '.join([str(elem) for elem in v.tags]).replace("(", "").replace(")", "").replace("'", "")
+                tags = v.format_tags()
                 print(f"  {i+1}) {v.title} ({v.video_id}) [{tags}]")
 
             print("Would you like to play any of the above? If yes, specify the number of the video. ")
@@ -261,7 +261,7 @@ class VideoPlayer:
             print(f"Here are the results for {video_tag}:")
             for i in range(len(results)):
                 v = results[i]
-                tags = ' '.join([str(elem) for elem in v.tags]).replace("(", "").replace(")", "").replace("'", "")
+                tags = v.format_tags()
                 print(f"  {i+1}) {v.title} ({v.video_id}) [{tags}]")
 
             print("Would you like to play any of the above? If yes, specify the number of the video. ")

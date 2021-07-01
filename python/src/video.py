@@ -50,3 +50,5 @@ class Video:
         self._flag_reason = "Not supplied"
         self._flag = False
 
+    def format_tags(self):
+        return ' '.join([str(elem) for elem in self.tags]).replace("(", "").replace(")", "").replace("'", "")
