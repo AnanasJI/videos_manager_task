@@ -4,6 +4,12 @@ from .video_library import VideoLibrary
 from .video_playlist import Playlist
 from random import choice
 
+# Video Error message Enums
+NO_VIDEO = 0
+NO_VIDEO_PLAYING = 1
+PAUSED = 2
+NOT_PAUSED = 3
+
 
 class VideoPlayer:
     """A class used to represent a Video Player."""
@@ -17,6 +23,16 @@ class VideoPlayer:
     def number_of_videos(self):
         num_videos = len(self._video_library.get_all_videos())
         print(f"{num_videos} videos in the library")
+
+    def video_error_msg(self, error, action=""):
+        if error == NO_VIDEO:
+            print("Cannot play video: Video does not exist")
+        elif error == NO_VIDEO_PLAYING:
+            print(f"Cannot {action} video: No video is currently playing")
+        elif error == PAUSED:
+            print(f"Video already paused: {self._vid_playing.title}")
+        elif error == NOT_PAUSED:
+            print("Cannot continue video: Video is not paused")
 
     def show_all_videos(self):
         """Returns all videos."""
@@ -48,7 +64,7 @@ class VideoPlayer:
             else:
                 print(f"Playing video: {self._vid_playing.title}")
         else:
-            print("Cannot play video: Video does not exist")
+            self.video_error_msg(NO_VIDEO)
 
     def stop_video(self):
         """Stops the current video."""
@@ -57,7 +73,7 @@ class VideoPlayer:
             self._vid_playing = None
             self._paused = False
         else:
-            print("Cannot stop video: No video is currently playing")
+            self.video_error_msg(NO_VIDEO_PLAYING, "stop")
 
     def play_random_video(self):
         """Plays a random video from the video library."""
@@ -78,12 +94,12 @@ class VideoPlayer:
         """Pauses the current video."""
         if self._vid_playing:
             if self._paused:
-                print(f"Video already paused: {self._vid_playing.title}")
+                self.video_error_msg(PAUSED)
             else:
                 print(f"Pausing video: {self._vid_playing.title}")
                 self._paused = True
         else:
-            print("Cannot pause video: No video is currently playing")
+            self.video_error_msg(NO_VIDEO_PLAYING, "pause")
 
     def continue_video(self):
         """Resumes playing the current video."""
@@ -91,9 +107,9 @@ class VideoPlayer:
             if self._paused:
                 print(f"Continuing video: {self._vid_playing.title}")
             else:
-                print("Cannot continue video: Video is not paused")
+                self.video_error_msg(NOT_PAUSED)
         else:
-            print("Cannot continue video: No video is currently playing")
+            self.video_error_msg(NO_VIDEO_PLAYING, "continue")
 
     def show_playing(self):
         """Displays video currently playing."""
