@@ -3,12 +3,23 @@
 from .video_library import VideoLibrary
 from .video_playlist import Playlist
 from random import choice
+from enum import Enum
 
-# Video Error message Enums
-NO_VIDEO = 0
-NO_VIDEO_PLAYING = 1
-PAUSED = 2
-NOT_PAUSED = 3
+
+class Errors(Enum):
+    """A class used to represent the different types of error messages."""
+    NO_VIDEO = 0
+    NO_VIDEO_PLAYING = 1
+    PAUSED = 2
+    NOT_PAUSED = 3
+    NAME_USED = 4
+    VIDEO_DOES_NOT_EXIST = 5
+    NOT_IN_PLAYLIST = 6
+    PLAYLIST_DOES_NOT_EXIST = 7
+    VIDEO_IN_PLAYLIST = 8
+    FLAGGED_VIDEO = 9
+    ALREADY_FLAGGED = 10
+    NO_FLAG = 11
 
 
 class VideoPlayer:
@@ -24,15 +35,32 @@ class VideoPlayer:
         num_videos = len(self._video_library.get_all_videos())
         print(f"{num_videos} videos in the library")
 
-    def video_error_msg(self, error, action=""):
-        if error == NO_VIDEO:
+    def error_msg(self, error, action="", playlist_name="", vid=None):
+        if error == Errors.NO_VIDEO:
             print("Cannot play video: Video does not exist")
-        elif error == NO_VIDEO_PLAYING:
+        elif error == Errors.NO_VIDEO_PLAYING:
             print(f"Cannot {action} video: No video is currently playing")
-        elif error == PAUSED:
+        elif error == Errors.PAUSED:
             print(f"Video already paused: {self._vid_playing.title}")
-        elif error == NOT_PAUSED:
+        elif error == Errors.NOT_PAUSED:
             print("Cannot continue video: Video is not paused")
+        elif error == Errors.NAME_USED:
+            print("Cannot create playlist: A playlist with the same name already exists")
+        elif error == Errors.VIDEO_DOES_NOT_EXIST:
+            print(f"Cannot {action} {playlist_name}: Video does not exist")
+        elif error == Errors.NOT_IN_PLAYLIST:
+            print(f"Cannot {action} {playlist_name}: Video is not in playlist")
+        elif error == Errors.PLAYLIST_DOES_NOT_EXIST:
+            print(f"Cannot {action} {playlist_name}: Playlist does not exist")
+        elif error == Errors.VIDEO_IN_PLAYLIST:
+            print(f"Cannot {action} {playlist_name}: Video already added")
+        elif error == Errors.FLAGGED_VIDEO:
+            print(f"Cannot {action} {playlist_name}: "
+                  f"Video is currently flagged (reason: {vid.flag_reason})")
+        elif error == Errors.ALREADY_FLAGGED:
+            print("Cannot flag video: Video is already flagged")
+        elif error == Errors.NO_FLAG:
+            print("Cannot remove flag from video: Video is not flagged")
 
     def show_all_videos(self):
         """Returns all videos."""
@@ -64,7 +92,7 @@ class VideoPlayer:
             else:
                 print(f"Playing video: {self._vid_playing.title}")
         else:
-            self.video_error_msg(NO_VIDEO)
+            self.error_msg(Errors.NO_VIDEO)
 
     def stop_video(self):
         """Stops the current video."""
@@ -73,7 +101,7 @@ class VideoPlayer:
             self._vid_playing = None
             self._paused = False
         else:
-            self.video_error_msg(NO_VIDEO_PLAYING, "stop")
+            self.error_msg(Errors.NO_VIDEO_PLAYING, "stop")
 
     def play_random_video(self):
         """Plays a random video from the video library."""
@@ -94,12 +122,12 @@ class VideoPlayer:
         """Pauses the current video."""
         if self._vid_playing:
             if self._paused:
-                self.video_error_msg(PAUSED)
+                self.error_msg(Errors.PAUSED)
             else:
                 print(f"Pausing video: {self._vid_playing.title}")
                 self._paused = True
         else:
-            self.video_error_msg(NO_VIDEO_PLAYING, "pause")
+            self.error_msg(Errors.NO_VIDEO_PLAYING, "pause")
 
     def continue_video(self):
         """Resumes playing the current video."""
@@ -107,9 +135,9 @@ class VideoPlayer:
             if self._paused:
                 print(f"Continuing video: {self._vid_playing.title}")
             else:
-                self.video_error_msg(NOT_PAUSED)
+                self.error_msg(Errors.NOT_PAUSED)
         else:
-            self.video_error_msg(NO_VIDEO_PLAYING, "continue")
+            self.error_msg(Errors.NO_VIDEO_PLAYING, "continue")
 
     def show_playing(self):
         """Displays video currently playing."""
@@ -130,7 +158,7 @@ class VideoPlayer:
             playlist_name: The playlist name.
         """
         if playlist_name.upper() in self._playlists:
-            print("Cannot create playlist: A playlist with the same name already exists")
+            self.error_msg(Errors.NAME_USED)
         else:
             self._playlists[playlist_name.upper()] = Playlist(playlist_name)
             print(f"Successfully created new playlist: {playlist_name}")
@@ -146,17 +174,16 @@ class VideoPlayer:
             vid = self._video_library.get_video(video_id)
             if vid:
                 if vid.flag:
-                    print(f"Cannot add video to {playlist_name}: "
-                          f"Video is currently flagged (reason: {vid.flag_reason})")
+                    self.error_msg(Errors.FLAGGED_VIDEO, "add video to", playlist_name, vid)
                 elif vid in self._playlists[playlist_name.upper()].videos:
-                    print(f"Cannot add video to {playlist_name}: Video already added")
+                    self.error_msg(Errors.VIDEO_IN_PLAYLIST, "add video to", playlist_name)
                 else:
                     self._playlists[playlist_name.upper()].videos.append(vid)
                     print(f"Added video to {playlist_name}: {vid.title}")
             else:
-                print(f"Cannot add video to {playlist_name}: Video does not exist")
+                self.error_msg(Errors.VIDEO_DOES_NOT_EXIST, "add video to", playlist_name)
         else:
-            print(f"Cannot add video to {playlist_name}: Playlist does not exist")
+            self.error_msg(Errors.PLAYLIST_DOES_NOT_EXIST, "add video to", playlist_name)
 
     def show_all_playlists(self):
         """Display all playlists."""
@@ -186,7 +213,7 @@ class VideoPlayer:
             else:
                 print("    No videos here yet")
         else:
-            print(f"Cannot show playlist {playlist_name}: Playlist does not exist")
+            self.error_msg(Errors.PLAYLIST_DOES_NOT_EXIST, "show playlist", playlist_name)
 
     def remove_from_playlist(self, playlist_name, video_id):
         """Removes a video to a playlist with a given name.
@@ -198,14 +225,14 @@ class VideoPlayer:
         if playlist_name.upper() in self._playlists:
             vid = self._video_library.get_video(video_id)
             if vid is None:
-                print(f"Cannot remove video from {playlist_name}: Video does not exist")
+                self.error_msg(Errors.VIDEO_DOES_NOT_EXIST, "remove video from", playlist_name)
             elif vid in self._playlists[playlist_name.upper()].videos:
                 self._playlists[playlist_name.upper()].videos.remove(vid)
                 print(f"Removed video from {playlist_name}: {vid.title}")
             else:
-                print(f"Cannot remove video from {playlist_name}: Video is not in playlist")
+                self.error_msg(Errors.NOT_IN_PLAYLIST, "remove video from", playlist_name)
         else:
-            print(f"Cannot remove video from {playlist_name}: Playlist does not exist")
+            self.error_msg(Errors.PLAYLIST_DOES_NOT_EXIST, "remove video from", playlist_name)
 
     def clear_playlist(self, playlist_name):
         """Removes all videos from a playlist with a given name.
@@ -217,7 +244,7 @@ class VideoPlayer:
             self._playlists[playlist_name.upper()].clear()
             print(f"Successfully removed all videos from {playlist_name}")
         else:
-            print(f"Cannot clear playlist {playlist_name}: Playlist does not exist")
+            self.error_msg(Errors.PLAYLIST_DOES_NOT_EXIST, "clear playlist", playlist_name)
 
     def delete_playlist(self, playlist_name):
         """Deletes a playlist with a given name.
@@ -229,8 +256,7 @@ class VideoPlayer:
             del self._playlists[playlist_name.upper()]
             print(f"Deleted playlist: {playlist_name}")
         else:
-            print(f"Cannot delete playlist {playlist_name}: Playlist does not exist")
-
+            self.error_msg(Errors.PLAYLIST_DOES_NOT_EXIST, "delete playlist", playlist_name)
 
     def search_videos(self, search_term):
         """Display all the videos whose titles contain the search_term.
@@ -298,15 +324,14 @@ class VideoPlayer:
         vid = self._video_library.get_video(video_id)
         if vid:
             if vid.flag:
-                print("Cannot flag video: Video is already flagged")
+                self.error_msg(Errors.ALREADY_FLAGGED)
             else:
                 vid.set_flag(flag_reason)
                 if self._vid_playing == vid:
                     self.stop_video()
                 print(f"Successfully flagged video: {vid.title} (reason: {flag_reason})")
         else:
-            print("Cannot flag video: Video does not exist")
-
+            self.error_msg(Errors.VIDEO_DOES_NOT_EXIST, "flag", "video")
 
     def allow_video(self, video_id):
         """Removes a flag from a video.
@@ -320,7 +345,7 @@ class VideoPlayer:
                 vid.allow()
                 print(f"Successfully removed flag from video: {vid.title}")
             else:
-                print("Cannot remove flag from video: Video is not flagged")
+                self.error_msg(Errors.NO_FLAG)
         else:
-            print("Cannot remove flag from video: Video does not exist")
+            self.error_msg(Errors.VIDEO_DOES_NOT_EXIST, "remove flag from", "video")
 
